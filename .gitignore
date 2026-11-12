@@ -1,0 +1,6 @@
+*.vcd
+*.vvp
+sim_*
+work/
+*.log
+
