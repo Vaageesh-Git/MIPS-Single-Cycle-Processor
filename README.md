@@ -27,5 +27,5 @@ iverilog -o sim_fetch tb/tb_fetch.v rtl/pc.v rtl/imem.v && vvp sim_fetch
 | Member A (Fetch + Top-Level) | | `docs/ports.md`, `rtl/pc.v`, `rtl/imem.v`, `rtl/mips_cpu.v`, `programs/test.hex`, `programs/test.asm`, `tb/tb_fetch.v` |
 | Member B (Datapath) | | `rtl/regfile.v`, `rtl/sign_extend.v`, `rtl/mux2.v`, `rtl/dmem.v` |
 | Member C (ALU + Control) | | `rtl/alu.v`, `rtl/alu_decoder.v`, `rtl/main_decoder.v`, `rtl/control_unit.v` |
-| Member D (Verification) | | `tb/tb_alu.v`, `tb/tb_mips_cpu.v` |
+| Member D (Verification) | | `tb/tb_alu.v`, `tb/tb_mips_cpu.v`, `programs/test_full.asm`, `programs/test.hex` |
 
