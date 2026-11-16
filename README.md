@@ -15,12 +15,12 @@ Modern Computer Architecture · Project 2: Single-Cycle MIPS Processor with Memo
 <table>
   <tr>
     <td align="center" width="50%">
-      <a href="https://drive.google.com/file/d/1MFVppQq7SBsJbisvDDP2NBADeqdvfY-x/view?usp=sharing"><img src="https://img.shields.io/badge/%E2%96%B6_Watch_the_Phase_1_video-red?style=for-the-badge&logo=google-drive&logoColor=white" alt="Watch the Phase 1 video"></a>
+      <a href="https://drive.google.com/file/d/1MFVppQq7SBsJbisvDDP2NBADeqdvfY-x/view?usp=sharing"><img src="media/phase1/video_thumbnail.png" alt="Watch the Phase 1 prototype video" width="400"></a>
       <br><b><a href="https://drive.google.com/file/d/1MFVppQq7SBsJbisvDDP2NBADeqdvfY-x/view?usp=sharing">▶ Watch the prototype video</a></b>
       <br>5 min · all five members present their work
     </td>
     <td align="center" width="50%">
-      <a href="docs/Report.pdf"><img src="https://img.shields.io/badge/Read_the_IEEE_Report_·_PDF-blue?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="Read the IEEE report (PDF)"></a>
+      <a href="docs/Report.pdf"><img src="media/phase1/report_thumbnail.png" alt="Read the Phase 1 IEEE report (PDF)" width="400"></a>
       <br><b><a href="docs/Report.pdf">Read the IEEE report (PDF)</a></b>
       <br>Full technical report with references
     </td>
@@ -208,7 +208,12 @@ MIPS CPU VERIFICATION RESULT: ALL 27 CHECKS PASSED! [PASS]
 ├── docs/                       # Architecture and interface specifications
 │   ├── ports.md                # Bit-width and interface contract for all modules
 │   ├── control_alu_notes.md    # Control truth tables, report section, video highlights
-│   └── verification_notes.md   # Verification matrix, execution trace, assertion log
+│   ├── verification_notes.md   # Verification matrix, execution trace, assertion log
+│   ├── datagram_diagram.png    # Full datapath architecture diagram
+│   └── Report.pdf              # IEEE Phase 1 technical report
+├── media/phase1/               # Thumbnail images for README cards
+│   ├── video_thumbnail.png     # Video title slide thumbnail
+│   └── report_thumbnail.png    # Report first-page thumbnail
 ├── programs/                   # Assembly and hex test programs
 │   ├── test.asm                # 5-instruction smoke test program
 │   ├── test.hex                # Assembled machine code for test.asm
