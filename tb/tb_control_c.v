@@ -133,6 +133,12 @@ module tb_control_c;
         // ADDI (001000): rw=1, rd=0, as=1, mw=0, mr=0, br=0, j=0, ctrl=010 (ADD)
         check_cu(6'b001000, 6'b000000, 1'b1, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 3'b010, "ADDI");
 
+        // Control Flow Instructions (Phase II)
+        // BEQ  (000100): rw=0, rd=0, as=0, mw=0, mr=0, br=1, j=0, ctrl=110 (SUB)
+        check_cu(6'b000100, 6'b000000, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 3'b110, "BEQ");
+        // J    (000010): rw=0, rd=0, as=0, mw=0, mr=0, br=0, j=1, ctrl=010 (ADD/default)
+        check_cu(6'b000010, 6'b000000, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 3'b010, "JUMP");
+
         // Safe Default (Unknown opcode -> all 0)
         check_cu(6'b111111, 6'b000000, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 3'b010, "Safe Default NOP");
 
