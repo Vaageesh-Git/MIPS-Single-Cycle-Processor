@@ -12,8 +12,8 @@
 | **LW** | `6'b100011` | 1 | 0 | 1 | 0 | 1 | 0 | 0 | `2'b00` |
 | **SW** | `6'b101011` | 0 | 0* | 1 | 1 | 0* | 0 | 0 | `2'b00` |
 | **ADDI** | `6'b001000` | 1 | 0 | 1 | 0 | 0 | 0 | 0 | `2'b00` |
-| *BEQ (Phase II)* | `6'b000100` | 0 | 0 | 0 | 0 | 0 | 1 | 0 | `2'b01` |
-| *J (Phase II)* | `6'b000010` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | `2'b00` |
+| **BEQ** | `6'b000100` | 0 | 0 | 0 | 0 | 0 | 1 | 0 | `2'b01` |
+| **J** | `6'b000010` | 0 | 0 | 0 | 0 | 0 | 0 | 1 | `2'b00` |
 | **Default (NOP)**| *Others* | 0 | 0 | 0 | 0 | 0 | 0 | 0 | `2'b00` |
 
 *\*Note: For `SW`, don't-care signals (`reg_dst`, `mem_to_reg`) are tied to `0` instead of `X` to guarantee deterministic and clean simulation waveforms.*
