@@ -37,13 +37,13 @@ Modern Computer Architecture · Project 2: Single-Cycle MIPS Processor with Memo
 
 | Deliverable | Description & Location | Status |
 |---|---|:---:|
-| **IEEE Technical Report** | Abstract, literature review, proposed architecture, individual contributions, references (`reports/`) | Ready |
-| **Prototype Demonstration Video** | 5-minute technical walkthrough: architecture, control table, ALU signed math, memory operations, and live simulation | Recorded / Outlined |
+| **IEEE Technical Report** | Abstract, literature review, proposed architecture, individual contributions, references ([`docs/Report.pdf`](docs/Report.pdf)) | Ready |
+| **Prototype Demonstration Video** | 5-minute technical walkthrough: architecture, control table, ALU signed math, memory operations, and live simulation | Recorded |
 | **Synthesizable RTL Core** | Pure Verilog-2001 datapath, Harvard memory interfaces, 2-level control unit ([`rtl/`](rtl/)) | Complete |
 | **Verification & Testbenches** | Self-checking testbenches with cycle-by-cycle logging and assertion tracking ([`tb/`](tb/)) | Complete |
 | **Software Benchmark Programs** | Machine code hex files and assembly test programs ([`programs/`](programs/)) | Complete |
 | **Simulation Waveforms** | VCD dump (`tb_mips_cpu.vcd`) for GTKWave timing analysis | Generated |
-| **Individual Contributions** | Documented in Section VII of the report and the [Team Table](#team) below | Complete |
+| **Individual Contributions** | Documented in Section IV of the report and the [Team Table](#team) below | Complete |
 
 ---
 
@@ -119,8 +119,11 @@ iverilog -o sim_alu tb/tb_alu.v rtl/alu.v && vvp sim_alu
 # Verify Program Counter incrementing and Instruction Fetch
 iverilog -o sim_fetch tb/tb_fetch.v rtl/pc.v rtl/imem.v && vvp sim_fetch
 
-# Verify Control Unit truth tables
-iverilog -o sim_ctrl tb/tb_control_c.v rtl/control_unit.v rtl/main_decoder.v rtl/alu_decoder.v && vvp sim_ctrl
+# Verify Control Unit truth tables (including Phase II BEQ and J)
+iverilog -o sim_ctrl tb/tb_control_c.v rtl/alu.v rtl/control_unit.v rtl/main_decoder.v rtl/alu_decoder.v && vvp sim_ctrl
+
+# Verify Isolated Datapath (Register File and Data Memory array store/load)
+iverilog -o sim_datapath tb/tb_datapath.v rtl/regfile.v rtl/dmem.v && vvp sim_datapath
 ```
 
 ### 3. Open Simulation Waveforms
@@ -141,10 +144,15 @@ Verification is implemented using self-checking testbenches with programmatic as
 |---|---|:---:|---|:---:|
 | **ALU Unit Test** | [`tb/tb_alu.v`](tb/tb_alu.v) | **36 / 36** | Signed additions, subtractions, logical bitwise operations, signed `SLT` corner cases (`-10 < 20`, `20 < -10`), zero-flag triggers | **PASS** |
 | **Fetch Unit Test** | [`tb/tb_fetch.v`](tb/tb_fetch.v) | **Sequential** | Synchronous reset to `0x00`, $+4$ PC address sequencing, hex ROM loading | **PASS** |
-| **Control Unit Test** | [`tb/tb_control_c.v`](tb/tb_control_c.v) | **All opcodes** | Control signal truth tables for R-type, `LW`, `SW`, `ADDI`, and safe NOP fallback | **PASS** |
+| **Control Unit Test** | [`tb/tb_control_c.v`](tb/tb_control_c.v) | **29 / 29** | Control signal truth tables for R-type, `LW`, `SW`, `ADDI`, `BEQ`, `J`, and safe NOP fallback | **PASS** |
+| **Isolated Datapath Test** | [`tb/tb_datapath.v`](tb/tb_datapath.v) | **13 / 13** | Regfile and dmem dual-bank storage, 6-element array load/store, `$0` immunity | **PASS** |
 | **Baseline CPU Test** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v) | **6 / 6** | Execution of `programs/test.hex` (`ADDI`, `ADD`, `SW`, `LW`, `$0` zero integrity) | **PASS** |
 | **Comprehensive CPU Test** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v) | **21 / 21** | Execution of `programs/test_full.hex` (all R-type, signed immediate, signed SLT, multi-word load/store) | **PASS** |
-| **Total Automated Assertions** | | **63 / 63** | **Zero simulation errors, 100% functional match** | **PASS** |
+| **Array Sum Benchmark** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v) | **2 / 2** | Execution of `programs/array_sum.hex` (array `{3, 7, 2, 9, 4}` -> sum = 25) | **PASS** |
+| **Max Search Benchmark** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v) | **2 / 2** | Execution of `programs/max_search.hex` (array `{3, 17, 5, 42, 8, 23}` -> max = 42) | **PASS** |
+| **Factorial Benchmark** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v) | **2 / 2** | Execution of `programs/factorial.hex` ($5! = 120$ via repeated addition loop) | **PASS** |
+| **Branch & Jump Micro-Tests** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v) | **7 / 7** | Branch taken, branch not taken, forward unconditional jump | **PASS** |
+| **Total Automated Assertions** | | **118 / 118** | **Zero simulation errors, 100% functional match across entire suite** | **PASS** |
 
 ### Execution Trace: Comprehensive Program (`programs/test_full.asm`)
 
@@ -175,7 +183,7 @@ Cycle 19: PC=0x4c | Instr=0x8c170008 | ALU Res=8   | RegWr=1 (wa3=$23, wd3=-15) 
 Cycle 20: PC=0x50 | Instr=0x8c18000c | ALU Res=12  | RegWr=1 (wa3=$24, wd3=1)   | MemWr=0 [LW $t8=1]
 
 ================================================================================
-MIPS CPU VERIFICATION RESULT: ALL 27 CHECKS PASSED! [PASS]
+MIPS CPU VERIFICATION RESULT: ALL 41 CHECKS PASSED! [PASS]
 ================================================================================
 ```
 
@@ -185,19 +193,20 @@ MIPS CPU VERIFICATION RESULT: ALL 27 CHECKS PASSED! [PASS]
 
 1. **Deterministic Waveform Design:** For instructions like Store Word (`SW`), don't-care lines (`reg_dst`, `mem_to_reg`) are explicitly tied to `0` rather than `X` to eliminate indeterminate states and unknown propagation in simulation.
 2. **Mathematical Rigor in Signed Comparisons:** Standard Verilog `<` treats registers as unsigned. In [`rtl/alu.v`](rtl/alu.v), `SLT` explicitly casts operands with `$signed(a) < $signed(b)`, ensuring `-10 < 20` evaluates to `1` while `20 < -10` evaluates to `0`.
-3. **Synthesis Latch Prevention:** All decoders and multiplexers provide complete case coverage and explicit default assignments, guaranteeing clean combinational logic synthesis without unintended latches.
+3. **Branch & Jump Routing:** Full support for `BEQ` target computation ($PC + 4 + (\text{sign\_imm} \ll 2)$) guarded by `branch & zero`, and unconditional jump target concatenation ($\{PC_{31:28}, \text{instr}_{25:0}, 2'b00\}$).
 4. **Hardwired Zero Register ($0):** Register `$0` is permanently locked to `32'b0` through combinational multiplexing (`assign rd1 = (ra1 == 5'd0) ? 32'b0 : regs[ra1];`) and write inhibition (`if (we3 && wa3 != 5'd0)`), enforcing MIPS ISA compliance.
 
 ---
 
-## Next Steps (Phase II)
+## Phase II Implementation (Completed)
 
-- [ ] **Branch & Jump Logic:** Connect `BEQ` target adder ($PC + 4 + (\text{sign\_imm} \ll 2)$), `J` target concatenation ($\{PC_{31:28}, \text{instr}_{25:0}, 2'b00\}$), and branch condition AND gate (`branch & zero`).
-- [ ] **Complex Benchmark Algorithms:** Implement and execute iterative programs using branches:
-  - Array Summation
-  - Maximum Element Search
-  - Factorial Computation ($N!$)
-- [ ] **FPGA Synthesis & Timing Closure:** Synthesize using Xilinx Vivado to measure LUT utilization, register count, and maximum operating frequency ($F_{\text{max}}$).
+- [x] **Branch & Jump Hardware:** Connected `BEQ` target adder ($PC + 4 + (\text{sign\_imm} \ll 2)$), `J` target concatenation ($\{PC_{31:28}, \text{instr}_{25:0}, 2'b00\}$), and branch condition AND gate (`branch & zero`).
+- [x] **Complex Benchmark Algorithms:** Implemented and executed iterative programs using branches:
+  - **Array Summation** (`programs/array_sum.hex`): $\sum \{3, 7, 2, 9, 4\} = 25$.
+  - **Maximum Element Search** (`programs/max_search.hex`): $\max \{3, 17, 5, 42, 8, 23\} = 42$.
+  - **Factorial Computation** (`programs/factorial.hex`): $5! = 120$ via repeated addition.
+- [x] **Micro-architectural Control Flow Tests:** Validated branch taken, branch not taken, and forward/backward jumps.
+- [x] **Isolated Datapath Verification:** Added `tb/tb_datapath.v` verifying register file and data memory storage.
 
 ---
 
@@ -210,11 +219,17 @@ MIPS CPU VERIFICATION RESULT: ALL 27 CHECKS PASSED! [PASS]
 │   ├── control_alu_notes.md    # Control truth tables, report section, video highlights
 │   ├── verification_notes.md   # Verification matrix, execution trace, assertion log
 │   ├── datagram_diagram.png    # Full datapath architecture diagram
-│   └── Report.pdf              # IEEE Phase 1 technical report
+│   └── Report.pdf              # IEEE technical report
 ├── media/phase1/               # Thumbnail images for README cards
 │   ├── video_thumbnail.png     # Video title slide thumbnail
 │   └── report_thumbnail.png    # Report first-page thumbnail
 ├── programs/                   # Assembly and hex test programs
+│   ├── array_sum.asm           # Array summation assembly program
+│   ├── array_sum.hex           # Array summation machine code
+│   ├── max_search.asm          # Maximum search assembly program
+│   ├── max_search.hex          # Maximum search machine code
+│   ├── factorial.asm           # 5! factorial assembly program
+│   ├── factorial.hex           # 5! factorial machine code
 │   ├── test.asm                # 5-instruction smoke test program
 │   ├── test.hex                # Assembled machine code for test.asm
 │   ├── test_full.asm           # 21-instruction comprehensive test program
@@ -224,8 +239,8 @@ MIPS CPU VERIFICATION RESULT: ALL 27 CHECKS PASSED! [PASS]
 │   ├── alu_decoder.v           # Secondary decoder for R-type funct codes
 │   ├── control_unit.v          # Top-level control wrapper
 │   ├── dmem.v                  # 64-word Data Memory RAM
-│   ├── imem.v                  # 64-word Instruction Memory ROM
-│   ├── main_decoder.v          # Primary opcode decoder
+│   ├── imem.v                  # 128-word Instruction Memory ROM
+│   ├── main_decoder.v          # Primary opcode decoder (including BEQ and J)
 │   ├── mips_cpu.v              # Top-level single-cycle CPU datapath
 │   ├── mux2.v                  # Parameterized 2:1 multiplexer
 │   ├── pc.v                    # Program Counter register & PC+4 adder
@@ -233,7 +248,8 @@ MIPS CPU VERIFICATION RESULT: ALL 27 CHECKS PASSED! [PASS]
 │   └── sign_extend.v           # 16-to-32 bit sign extender
 ├── tb/                         # Simulation testbenches
 │   ├── tb_alu.v                # 36-test unit verification of ALU
-│   ├── tb_control_c.v          # Control unit truth-table verification
+│   ├── tb_control_c.v          # Control unit truth-table verification (Phase I & II)
+│   ├── tb_datapath.v           # Isolated datapath verification (regfile + dmem)
 │   ├── tb_fetch.v              # PC increment and instruction fetch testbench
 │   └── tb_mips_cpu.v           # End-to-end CPU self-checking testbench
 └── README.md                   # Project documentation and user guide
@@ -243,10 +259,10 @@ MIPS CPU VERIFICATION RESULT: ALL 27 CHECKS PASSED! [PASS]
 
 ## Team & Individual Contributions
 
-| Member | Role | Assigned Files & Work Scope | Phase 1 Contributions |
+| Member | Role | Assigned Files & Work Scope | Phase 1 & 2 Contributions |
 |---|---|---|---|
-| **Vaageesh Kumar Singh**<br>(Member A) | **Fetch & Top-Level Architecture (Lead)** | [`rtl/pc.v`](rtl/pc.v), [`rtl/imem.v`](rtl/imem.v), [`rtl/mips_cpu.v`](rtl/mips_cpu.v), [`docs/ports.md`](docs/ports.md) | Designed Program Counter with synchronous reset, instruction memory interface, top-level CPU integration, and overall port specifications. |
-| **Ananya Narang**<br>(Member B) | **Datapath & Register Core** | [`rtl/regfile.v`](rtl/regfile.v), [`rtl/sign_extend.v`](rtl/sign_extend.v), [`rtl/mux2.v`](rtl/mux2.v) | Built 32×32-bit register file with hardwired `$0=0`, 16-to-32 immediate sign extension, and parameterized datapath multiplexers. |
-| **Shreyash Golhani**<br>(Member C) | **Control Subsystem & Execution Core** | [`rtl/alu.v`](rtl/alu.v), [`rtl/main_decoder.v`](rtl/main_decoder.v), [`rtl/alu_decoder.v`](rtl/alu_decoder.v), [`rtl/control_unit.v`](rtl/control_unit.v), [`docs/control_alu_notes.md`](docs/control_alu_notes.md) | Designed 2-level hierarchical control unit, opcode/funct decoding tables, 32-bit ALU with signed comparison logic, and zero flag. |
-| **Anwesha Adhikari**<br>(Member D) | **Memory Subsystem & Write-Back Interface** | [`rtl/dmem.v`](rtl/dmem.v), [`rtl/mips_cpu.v`](rtl/mips_cpu.v), memory interface documentation | Implemented byte-to-word data memory interface, synchronous store/combinational load datapath, and write-back multiplexer routing. |
-| **Aman Kumar**<br>(Member E) | **Verification Suite & Software Benchmarks** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v), [`tb/tb_alu.v`](tb/tb_alu.v), [`tb/tb_fetch.v`](tb/tb_fetch.v), [`programs/`](programs/), [`docs/verification_notes.md`](docs/verification_notes.md) | Authored self-checking automated testbenches, generated VCD waveforms, developed baseline and comprehensive MIPS test programs in assembly/hex. |
+| **Vaageesh Kumar Singh**<br>(Member A) | **Fetch & Top-Level Architecture (Lead)** | [`rtl/pc.v`](rtl/pc.v), [`rtl/imem.v`](rtl/imem.v), [`rtl/mips_cpu.v`](rtl/mips_cpu.v), [`docs/ports.md`](docs/ports.md) | Designed Program Counter with synchronous reset, instruction memory interface, top-level CPU integration, next-PC branch/jump datapath, and architectural port contracts. |
+| **Ananya Narang**<br>(Member B) | **Datapath Core & Data Memory** | [`rtl/regfile.v`](rtl/regfile.v), [`rtl/sign_extend.v`](rtl/sign_extend.v), [`rtl/mux2.v`](rtl/mux2.v), [`rtl/dmem.v`](rtl/dmem.v), [`tb/tb_datapath.v`](tb/tb_datapath.v) | Built 32×32-bit register file with hardwired `$0=0`, 16-to-32 immediate sign extension, 2:1 multiplexers, 64-word data memory (dmem), and isolated datapath testbench. |
+| **Shreyash Golhani**<br>(Member C) | **Control Subsystem & Execution Core** | [`rtl/alu.v`](rtl/alu.v), [`rtl/main_decoder.v`](rtl/main_decoder.v), [`rtl/alu_decoder.v`](rtl/alu_decoder.v), [`rtl/control_unit.v`](rtl/control_unit.v), [`tb/tb_control_c.v`](tb/tb_control_c.v), [`docs/control_alu_notes.md`](docs/control_alu_notes.md) | Designed 2-level hierarchical control unit, opcode/funct decoding tables, BEQ/J control generation, 32-bit ALU with signed comparison logic, and zero flag. |
+| **Anwesha Adhikari**<br>(Member D) | **Verification Suite & Software Benchmarks** | [`tb/tb_mips_cpu.v`](tb/tb_mips_cpu.v), [`tb/tb_alu.v`](tb/tb_alu.v), [`tb/tb_fetch.v`](tb/tb_fetch.v), [`programs/`](programs/), [`docs/verification_notes.md`](docs/verification_notes.md) | Developed automated end-to-end self-checking testbenches, generated VCD waveforms, authored baseline and Phase II assembly/hex benchmark programs (Array Sum, Max Search, Factorial). |
+| **Aman Kumar**<br>(Member E) | **Design, Synthesis & Documentation Lead** | [`docs/Report.pdf`](docs/Report.pdf), [`docs/datagram_diagram.png`](docs/datagram_diagram.png) | Authored comprehensive IEEE technical report, designed datapath diagrams including BEQ/J routing, coordinated Phase I/II synthesis reporting and final documentation. |
