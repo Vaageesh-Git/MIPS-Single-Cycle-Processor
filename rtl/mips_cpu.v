@@ -12,6 +12,12 @@ module mips_cpu (
     wire [31:0] next_pc;
     wire [31:0] instr;
 
+    // Next-PC / Branch & Jump (Phase II)
+    wire [31:0] branch_target;
+    wire [31:0] jump_target;
+    wire [31:0] pc_branch;
+    wire        pc_src;
+
     // Instruction Decode
     wire [5:0]  opcode;
     wire [4:0]  rs;
@@ -26,8 +32,8 @@ module mips_cpu (
     wire        alu_src;
     wire        mem_write;
     wire        mem_to_reg;
-    wire        branch;     // Phase II
-    wire        jump;       // Phase II
+    wire        branch;
+    wire        jump;
     wire [2:0]  alu_ctrl;
 
     // Datapath
@@ -37,7 +43,7 @@ module mips_cpu (
     wire [31:0] sign_imm;
     wire [31:0] src_b;
     wire [31:0] alu_result;
-    wire        zero;       // Phase II
+    wire        zero;
     wire [31:0] read_data;
     wire [31:0] result_wb;
 
@@ -52,10 +58,13 @@ module mips_cpu (
     assign imm    = instr[15:0];
 
     // ---------------------------------------------------------
-    // Fetch Stage
+    // Fetch Stage & Next-PC Logic (Phase II: Branch & Jump)
     // ---------------------------------------------------------
-    // PHASE II: branch/jump mux goes here (will use branch, jump, zero, sign_imm, instr[25:0])
-    assign next_pc = pc_plus4;
+    assign branch_target = pc_plus4 + (sign_imm << 2);
+    assign pc_src        = branch & zero;
+    assign pc_branch     = pc_src ? branch_target : pc_plus4;
+    assign jump_target   = {pc_plus4[31:28], instr[25:0], 2'b00};
+    assign next_pc       = jump ? jump_target : pc_branch;
 
     pc u_pc (
         .clk      (clk),
@@ -149,4 +158,3 @@ module mips_cpu (
     );
 
 endmodule
-
