@@ -165,7 +165,7 @@ Top-level single-cycle CPU. *(Add debug outputs only if needed later, and docume
 | `SW` | I | `6'b101011` (`0x2B`) | `—` | `2'b00` | `3'b010` |
 | `ADDI` | I | `6'b001000` (`0x08`) | `—` | `2'b00` | `3'b010` |
 
-### Phase II (Reserved Ports/Signals Ready)
+### Phase II (Active)
 | Instruction | Type | `opcode` (6-bit) | `funct` (6-bit) | `alu_op` | `alu_ctrl` |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `BEQ` | I | `6'b000100` (`0x04`) | `—` | `2'b01` | `3'b110` |
