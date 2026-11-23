@@ -220,6 +220,149 @@ module tb_mips_cpu;
         check_reg(5'd0,  32'd0,           "$0 (zero reg)");
 
         // =====================================================================
+        // PART 3: Array Sum Benchmark (programs/array_sum.hex)
+        // Array: {3, 7, 2, 9, 4} -> sum = 25
+        // Verifies: Loop with BEQ (taken and not taken) and J (backward jump)
+        // =====================================================================
+        $display("\n================================================================================");
+        $display("   PART 3: RUNNING ARRAY SUM BENCHMARK (programs/array_sum.hex)                 ");
+        $display("================================================================================");
+
+        $readmemh("programs/array_sum.hex", dut.u_imem.mem);
+        for (i = 0; i < 64; i = i + 1) dut.u_dmem.mem[i] = 32'b0;
+        for (i = 0; i < 32; i = i + 1) dut.u_regfile.regs[i] = 32'b0;
+
+        reset = 1'b1;
+        @(posedge clk);
+        #1;
+        @(negedge clk);
+        reset = 1'b0;
+
+        for (cycle = 0; cycle < 45; cycle = cycle + 1) begin
+            @(posedge clk);
+        end
+        #1;
+
+        $display("\n--- [Part 3 Verification: Array Sum Results] ---");
+        check_reg(5'd10, 32'd25, "$t2 (sum)");
+        check_mem(32'd5,  32'd25, "dmem[5] (sum)");
+
+        // =====================================================================
+        // PART 4: Maximum Search Benchmark (programs/max_search.hex)
+        // Array: {3, 17, 5, 42, 8, 23} -> max = 42
+        // Verifies: Loop with SLT, conditional branch, forward skip, backward jump
+        // =====================================================================
+        $display("\n================================================================================");
+        $display("   PART 4: RUNNING MAXIMUM SEARCH BENCHMARK (programs/max_search.hex)           ");
+        $display("================================================================================");
+
+        $readmemh("programs/max_search.hex", dut.u_imem.mem);
+        for (i = 0; i < 64; i = i + 1) dut.u_dmem.mem[i] = 32'b0;
+        for (i = 0; i < 32; i = i + 1) dut.u_regfile.regs[i] = 32'b0;
+
+        reset = 1'b1;
+        @(posedge clk);
+        #1;
+        @(negedge clk);
+        reset = 1'b0;
+
+        for (cycle = 0; cycle < 55; cycle = cycle + 1) begin
+            @(posedge clk);
+        end
+        #1;
+
+        $display("\n--- [Part 4 Verification: Maximum Search Results] ---");
+        check_reg(5'd16, 32'd42, "$s0 (max)");
+        check_mem(32'd6,  32'd42, "dmem[6] (max)");
+
+        // =====================================================================
+        // PART 5: Factorial Computation Benchmark (programs/factorial.hex)
+        // Computes 5! = 120 via repeated addition loop
+        // Verifies: Nested loops, loop exit BEQ, loop backward J
+        // =====================================================================
+        $display("\n================================================================================");
+        $display("   PART 5: RUNNING FACTORIAL BENCHMARK (programs/factorial.hex)                 ");
+        $display("================================================================================");
+
+        $readmemh("programs/factorial.hex", dut.u_imem.mem);
+        for (i = 0; i < 64; i = i + 1) dut.u_dmem.mem[i] = 32'b0;
+        for (i = 0; i < 32; i = i + 1) dut.u_regfile.regs[i] = 32'b0;
+
+        reset = 1'b1;
+        @(posedge clk);
+        #1;
+        @(negedge clk);
+        reset = 1'b0;
+
+        for (cycle = 0; cycle < 95; cycle = cycle + 1) begin
+            @(posedge clk);
+        end
+        #1;
+
+        $display("\n--- [Part 5 Verification: Factorial Results] ---");
+        check_reg(5'd16, 32'd120, "$s0 (5!)");
+        check_mem(32'd0,  32'd120, "dmem[0] (5!)");
+
+        // =====================================================================
+        // PART 6: Dedicated Branch & Jump Micro-Tests
+        // Tests explicitly: BEQ taken, BEQ not taken, forward Jump
+        // Instructions:
+        //   0: addi $t0, $0, 10
+        //   1: addi $t1, $0, 10
+        //   2: beq  $t0, $t1, 2  (TAKEN -> skips instr 3 to instr 5)
+        //   3: addi $t2, $0, 99  (SKIPPED)
+        //   4: addi $t2, $0, 98  (SKIPPED)
+        //   5: addi $t3, $0, 50  (EXECUTED)
+        //   6: addi $t4, $0, 15  (NOT EQUAL to $t0)
+        //   7: beq  $t0, $t4, 2  (NOT TAKEN -> executes instr 8)
+        //   8: addi $t5, $0, 60  (EXECUTED)
+        //   9: j    12           (FORWARD JUMP -> jumps to instr 12)
+        //  10: addi $t6, $0, 99  (SKIPPED)
+        //  11: addi $t6, $0, 98  (SKIPPED)
+        //  12: addi $t7, $0, 70  (EXECUTED)
+        // =====================================================================
+        $display("\n================================================================================");
+        $display("   PART 6: DEDICATED BRANCH & JUMP MICRO-TESTS                                  ");
+        $display("================================================================================");
+
+        for (i = 0; i < 128; i = i + 1) dut.u_imem.mem[i] = 32'b0;
+        dut.u_imem.mem[0]  = 32'h2008000A; // addi $t0, $0, 10
+        dut.u_imem.mem[1]  = 32'h2009000A; // addi $t1, $0, 10
+        dut.u_imem.mem[2]  = 32'h11090002; // beq  $t0, $t1, 2
+        dut.u_imem.mem[3]  = 32'h200A0063; // addi $t2, $0, 99 (skipped)
+        dut.u_imem.mem[4]  = 32'h200A0062; // addi $t2, $0, 98 (skipped)
+        dut.u_imem.mem[5]  = 32'h200B0032; // addi $t3, $0, 50
+        dut.u_imem.mem[6]  = 32'h200C000F; // addi $t4, $0, 15
+        dut.u_imem.mem[7]  = 32'h110C0002; // beq  $t0, $t4, 2 (not taken)
+        dut.u_imem.mem[8]  = 32'h200D003C; // addi $t5, $0, 60
+        dut.u_imem.mem[9]  = 32'h0800000C; // j    12 (forward jump)
+        dut.u_imem.mem[10] = 32'h200E0063; // addi $t6, $0, 99 (skipped)
+        dut.u_imem.mem[11] = 32'h200E0062; // addi $t6, $0, 98 (skipped)
+        dut.u_imem.mem[12] = 32'h200F0046; // addi $t7, $0, 70
+
+        for (i = 0; i < 32; i = i + 1) dut.u_regfile.regs[i] = 32'b0;
+
+        reset = 1'b1;
+        @(posedge clk);
+        #1;
+        @(negedge clk);
+        reset = 1'b0;
+
+        for (cycle = 0; cycle < 15; cycle = cycle + 1) begin
+            @(posedge clk);
+        end
+        #1;
+
+        $display("\n--- [Part 6 Verification: Micro-Test Results] ---");
+        check_reg(5'd8,  32'd10, "$t0 (10)");
+        check_reg(5'd9,  32'd10, "$t1 (10)");
+        check_reg(5'd10, 32'd0,  "$t2 (skipped by BEQ taken)");
+        check_reg(5'd11, 32'd50, "$t3 (50 after BEQ taken)");
+        check_reg(5'd13, 32'd60, "$t5 (60 after BEQ not taken)");
+        check_reg(5'd14, 32'd0,  "$t6 (skipped by forward J)");
+        check_reg(5'd15, 32'd70, "$t7 (70 after forward J)");
+
+        // =====================================================================
         // Final Summary
         // =====================================================================
         $display("\n================================================================================");

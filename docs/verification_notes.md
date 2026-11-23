@@ -53,4 +53,12 @@ RESULT: ALL CHECKS PASSED (0 Errors)
 
 ---
 
+### C. Phase II Complex Benchmark Suites & Control Flow
 
+| Benchmark Program | Source Files | Test Coverage | Key Verification Points | Result |
+| :--- | :--- | :---: | :--- | :---: |
+| **Array Sum** | `programs/array_sum.asm`, `.hex` | 2 Assertions | Loop traversal over 5 elements `{3, 7, 2, 9, 4}`, backward `J`, exit `BEQ` | **PASS** (sum=25 in `$t2` & `dmem[5]`) |
+| **Maximum Search** | `programs/max_search.asm`, `.hex` | 2 Assertions | Signed `SLT`, conditional skip `BEQ`, dynamic peak tracking `{3, 17, 5, 42, 8, 23}` | **PASS** (max=42 in `$s0` & `dmem[6]`) |
+| **Factorial ($5!$)** | `programs/factorial.asm`, `.hex` | 2 Assertions | Nested loop multiplication via repeated addition, outer & inner branch exits | **PASS** ($5!=120$ in `$s0` & `dmem[0]`) |
+| **Branch/Jump Micro-tests** | `tb/tb_mips_cpu.v` (Part 6) | 7 Assertions | `BEQ` taken (target skip), `BEQ` not taken (fall-through), forward `J` (label skip) | **PASS** (100% control-flow accuracy) |
+| **Isolated Datapath Suite** | `tb/tb_datapath.v` | 13 Assertions | Dual-port register writes/reads, word-indexed memory storage/retrieval, `$0` immunity | **PASS** (13 / 13 checks) |
